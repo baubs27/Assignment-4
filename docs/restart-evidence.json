@@ -1,0 +1,134 @@
+{
+  "checked_at": "2026-11-12T02:46:53.123946+00:00",
+  "source": "Actual Yahoo Finance capture",
+  "upstream": "disconnected",
+  "read_only_verified": true,
+  "sessions": [
+    {
+      "dataset": "demo",
+      "source": "Constructed teaching fixture",
+      "symbol": "AAPL",
+      "deliveries": 276,
+      "observations": 275,
+      "duplicates": 1,
+      "start": 1794236405.2,
+      "end": 1794241870.2
+    },
+    {
+      "dataset": "live",
+      "source": "Yahoo Finance WebSocket",
+      "symbol": "AAPL",
+      "deliveries": 29,
+      "observations": 27,
+      "duplicates": 2,
+      "start": 1794450442.778659,
+      "end": 1794451407.283289
+    },
+    {
+      "dataset": "live",
+      "source": "Yahoo Finance WebSocket",
+      "symbol": "BTC-USD",
+      "deliveries": 100,
+      "observations": 100,
+      "duplicates": 0,
+      "start": 1794450439.759553,
+      "end": 1794451512.037911
+    },
+    {
+      "dataset": "live",
+      "source": "Yahoo Finance WebSocket",
+      "symbol": "MSFT",
+      "deliveries": 38,
+      "observations": 34,
+      "duplicates": 4,
+      "start": 1794450441.985761,
+      "end": 1794451455.212279
+    }
+  ],
+  "checks": [
+    {
+      "symbol": "AAPL",
+      "receipts": 29,
+      "observations": 27,
+      "bars": 8,
+      "first_candle": {
+        "timestamp": 1794450420,
+        "open": 355.55,
+        "high": 355.55,
+        "low": 355.52,
+        "close": 355.52,
+        "volume": null,
+        "observations": 2,
+        "complete": true
+      },
+      "last_candle": {
+        "timestamp": 1794451380,
+        "open": 355.18,
+        "high": 355.18,
+        "low": 355.04,
+        "close": 355.18,
+        "volume": null,
+        "observations": 3,
+        "complete": false
+      },
+      "sqlite_ohlc_match": true,
+      "repeated_replay_equal": true
+    },
+    {
+      "symbol": "MSFT",
+      "receipts": 38,
+      "observations": 34,
+      "bars": 8,
+      "first_candle": {
+        "timestamp": 1794450420,
+        "open": 520.78,
+        "high": 520.78,
+        "low": 520.5,
+        "close": 520.5,
+        "volume": null,
+        "observations": 6,
+        "complete": true
+      },
+      "last_candle": {
+        "timestamp": 1794451440,
+        "open": 520.1,
+        "high": 520.1,
+        "low": 520.1,
+        "close": 520.1,
+        "volume": null,
+        "observations": 1,
+        "complete": false
+      },
+      "sqlite_ohlc_match": true,
+      "repeated_replay_equal": true
+    },
+    {
+      "symbol": "BTC-USD",
+      "receipts": 100,
+      "observations": 100,
+      "bars": 10,
+      "first_candle": {
+        "timestamp": 1794450420,
+        "open": 73766.68,
+        "high": 73782.84,
+        "low": 73766.68,
+        "close": 73768.02,
+        "volume": null,
+        "observations": 9,
+        "complete": true
+      },
+      "last_candle": {
+        "timestamp": 1794451500,
+        "open": 73780.31,
+        "high": 73780.31,
+        "low": 73774.87,
+        "close": 73774.87,
+        "volume": null,
+        "observations": 3,
+        "complete": false
+      },
+      "sqlite_ohlc_match": true,
+      "repeated_replay_equal": true
+    }
+  ]
+}

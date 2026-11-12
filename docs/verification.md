@@ -107,3 +107,9 @@ Machine-readable records: [before restart](offline-copy-evidence.json), [after r
 ## Subsequent GitHub upload request
 
 The user authorized uploading the project to https://github.com/baubs27/Assignment-4.git. Destination inspection found an empty public repository with write access and default branch main. The initial source commit includes code, locks, tests, documentation, screenshots, and reference prompts. .gitignore excludes .runtime, node_modules, frontend/dist, SQLite recordings, caches, logs, and .env. The application has not changed since the recorded tests and build above; this follow-up updates publication documentation and Git state.
+
+## Submission preparation follow-up
+
+The student requested report.md, supplied a screen recording, confirmed Codex was the only coding agent/editor/AI tool used, and authorized public GitHub publication of the video and supporting documents. A fresh clone of source commit 6c00865 installed its own locked dependencies, passed 9 tests in 3.36 seconds, built the frontend, and served the dashboard/health with HTTP 200 on isolated localhost:8002. A fresh offline database initialized to 276 demo receipts and 275 observations. The isolated server was stopped; the student's main test app was not stopped for this work. Details: [clean-checkout verification](clean-checkout-verification.md).
+
+The original 65.1333-second recording exceeded the one-minute limit. A 56-second derivative combines 44 seconds of its live-workstation footage with two explicitly labeled six-second verification screenshots. Captions identify the separation of browser connectivity from source freshness/status. Output frames and full decode were checked; the original was preserved. See [video](part4-1-demo.mp4), [curated evidence](evidence-log.md), and [AI disclosure](../AI-USE.md). No model-generated video or fabricated live footage was used. Existing provider-volume and date-range UI limitations remain disclosed in report.md.

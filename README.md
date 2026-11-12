@@ -96,4 +96,6 @@ AGENTS.md         Standing instructions for future work
 
 AI assisted implementation and debugging; the student should inspect the code and reproduce the checks before submission. Source repository: [baubs27/Assignment-4](https://github.com/baubs27/Assignment-4). Local recordings, installed dependencies, and build output are excluded from Git. Canvas submission and account actions remain student tasks.
 
+Submission evidence: [tool and model disclosure](AI-USE.md), [curated evidence log](docs/evidence-log.md), [clean-checkout verification](docs/clean-checkout-verification.md), and [56-second combined video](docs/part4-1-demo.mp4). The video labels its live-recording excerpt and its two verification-screenshot sections separately.
+
 References: [yfinance WebSocket documentation](https://ranaroussi.github.io/yfinance/reference/yfinance.websocket.html), [Lightweight Charts documentation](https://tradingview.github.io/lightweight-charts/docs), [TradingView](https://www.tradingview.com/). TradingView Lightweight Charts™ is used under its Apache 2.0 license; see frontend node_modules/lightweight-charts/LICENSE and NOTICE. yfinance is an independent tool, not an official Yahoo library.

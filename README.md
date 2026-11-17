@@ -2,7 +2,7 @@
 
 A local IST 402 Parts 4.1-4.2 application for observing Yahoo Finance prices, inspecting candlesticks and volume, preserving/replaying observations, deriving SMA crossover signals, and measuring simulated account outcomes. Built with Vue 3, FastAPI, SQLite, and TradingView Lightweight Charts 5.3. Market provenance and receipt-order replay remain available alongside the strategy lab, saved backtests, and persistent paper accounts.
 
-This implements the supplied Part 4.1 and Part 4.2 requirements. AI model decisions, chart-image interpretation, and voice belong to Part 4.3 and are not implemented. CSV loading is ungraded practice and is not used as evidence of streaming. The existing report.md/video document the submitted Part 4.1 version; the current Part 4.2 behavior and assumptions are documented in [docs/part4-2.md](docs/part4-2.md).
+This implements the supplied Part 4.1 and Part 4.2 requirements. AI model decisions, chart-image interpretation, and voice belong to Part 4.3 and are not implemented. CSV loading is ungraded practice and is not used as evidence of streaming. The self-contained [report.md](report.md) now covers Part 4.2, including verification, AI disclosure, evidence, the verified application commit, and the 54-second video. Detailed implementation notes remain in [docs/part4-2.md](docs/part4-2.md); the earlier Part 4.1 report remains in Git history.
 
 ## Start on this computer
 
@@ -123,6 +123,8 @@ AGENTS.md         Standing instructions for future work
 
 AI assisted implementation and debugging; the student should inspect the code and reproduce the checks before submission. Source repository: [baubs27/Assignment-4](https://github.com/baubs27/Assignment-4). Local recordings, installed dependencies, and build output are excluded from Git. Canvas submission and account actions remain student tasks.
 
-Submission evidence: [tool and model disclosure](AI-USE.md), [curated evidence log](docs/evidence-log.md), [clean-checkout verification](docs/clean-checkout-verification.md), and [56-second combined video](docs/part4-1-demo.mp4). The video labels its live-recording excerpt and its two verification-screenshot sections separately.
+Part 4.2 submission: [self-contained report](report.md) and [54-second combined video](docs/part4-2-demo.mp4). The report includes the full disclosure, curated evidence log, and successful hosted clean-checkout checks for the verified Part 4.2 source. The video labels the student recording, constructed-data capture, and saved Yahoo daily-history result.
+
+Earlier Part 4.1 evidence is preserved separately: [disclosure](AI-USE.md), [evidence log](docs/evidence-log.md), [clean-checkout verification](docs/clean-checkout-verification.md), and [56-second video](docs/part4-1-demo.mp4). That video is not the Part 4.2 demonstration.
 
 References: [yfinance WebSocket documentation](https://ranaroussi.github.io/yfinance/reference/yfinance.websocket.html), [Lightweight Charts documentation](https://tradingview.github.io/lightweight-charts/docs), [TradingView](https://www.tradingview.com/). TradingView Lightweight Charts™ is used under its Apache 2.0 license; see frontend node_modules/lightweight-charts/LICENSE and NOTICE. yfinance is an independent tool, not an official Yahoo library.

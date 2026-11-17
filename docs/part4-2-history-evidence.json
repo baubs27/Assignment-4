@@ -1,0 +1,114 @@
+{
+  "source": {
+    "label": "Yahoo Finance historical daily / 1y / unadjusted / no dividends",
+    "digest": "70450a0e1adc80970ffccc430a92336c9852f8e0c9e3f1e6eec697b8a78068e7",
+    "history_id": "c5dd2fbd0c67453492862ace8b670169",
+    "fetched_at": 1794864826.51956,
+    "execution": "Next completed daily bar open",
+    "bars": 250
+  },
+  "config": {
+    "symbol": "AAPL",
+    "source": "history",
+    "interval": "1d",
+    "fast": 5,
+    "slow": 20,
+    "cash": 10000.0,
+    "quantity": 10,
+    "fee": 1.0,
+    "slippage_bps": 5.0,
+    "start": null,
+    "end": null,
+    "history_id": "c5dd2fbd0c67453492862ace8b670169"
+  },
+  "account": {
+    "initial_cash": 10000.0,
+    "cash": 6893.09,
+    "quantity": 10.0,
+    "average_cost": 349.82476279,
+    "mark": 356.26998901,
+    "market_value": 3562.7,
+    "equity": 10455.79,
+    "realized_pnl": 391.33,
+    "unrealized_pnl": 64.45,
+    "total_pnl": 455.79,
+    "fees": 13.0,
+    "return_pct": 4.5579,
+    "max_drawdown_pct": 3.5434,
+    "fills": 13,
+    "pending_orders": 0
+  },
+  "run_id": "7e895d37ebdf41f9b575ff04624a9c5c",
+  "signals": 14,
+  "orders": 13,
+  "first_decision": {
+    "timestamp": 1763337600,
+    "open": 268.82000732421875,
+    "high": 270.489990234375,
+    "low": 265.7300109863281,
+    "close": 267.4599914550781,
+    "volume": 45018300.0,
+    "complete": true,
+    "fast": null,
+    "slow": null,
+    "crossover": null,
+    "known_at": 1763424000,
+    "receipt_id": 0
+  },
+  "last_decision": {
+    "timestamp": 1794528000,
+    "open": 357.9599914550781,
+    "high": 360.8299865722656,
+    "low": 355.75,
+    "close": 356.2699890136719,
+    "volume": 39985300.0,
+    "complete": true,
+    "fast": 353.1960021972656,
+    "slow": 346.15050201416017,
+    "crossover": null,
+    "known_at": 1794614400,
+    "receipt_id": 0
+  },
+  "first_fills": [
+    {
+      "id": 1,
+      "order_id": 1,
+      "side": "buy",
+      "quantity": 10.0,
+      "price": 269.33461221,
+      "fee": 1.0,
+      "timestamp": 1770076800,
+      "receipt_id": null,
+      "realized_pnl": 0.0
+    },
+    {
+      "id": 2,
+      "order_id": 2,
+      "side": "sell",
+      "quantity": 10.0,
+      "price": 258.84051622,
+      "fee": 1.0,
+      "timestamp": 1771545600,
+      "receipt_id": null,
+      "realized_pnl": -106.94095993
+    },
+    {
+      "id": 3,
+      "order_id": 3,
+      "side": "buy",
+      "quantity": 10.0,
+      "price": 272.94640256,
+      "fee": 1.0,
+      "timestamp": 1772150400,
+      "receipt_id": null,
+      "realized_pnl": 0.0
+    }
+  ],
+  "reference_check": {
+    "reference": "pandas rolling mean and shifted SMA crossover",
+    "bars_compared": 250,
+    "max_absolute_sma_error": 0.0,
+    "all_crossovers_equal": true,
+    "repeated_frozen_input_result_equal": true
+  }
+}

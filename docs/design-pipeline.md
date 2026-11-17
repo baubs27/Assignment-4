@@ -21,7 +21,17 @@ backend/store.py: immutable observations + append-only receipt records
        frontend/src/App.vue: price candles, volume histogram, inspector and ledger
 ```
 
-All blocks above exist. Later-part strategy, simulation, backtesting, image interpretation, model, and audio services do not yet exist.
+All blocks above exist. Part 4.2 adds the strategy/account path below. Part 4.3 image interpretation, model decisions, and audio services do not yet exist.
+
+```text
+Current as-of-receipt candles -> indicators.py -> confirmed / provisional chart overlays
+Completed decision-time bars -> Strategy.close() -> pending simulated order
+Later eligible observed price or next historical open -> Broker -> fill / cash / basis / P&L
+    -> simulation_runs + simulated_orders + simulated_fills -> Strategy lab + equity chart
+Yahoo daily download -> immutable history_sets snapshot -> sequential historical bar runner
+```
+
+See [Part 4.2 schema, execution, and causality details](part4-2.md). Account restart preserves balances but pauses trading; historical fills are not regenerated from later corrections. Every experiment saves parameters and a frozen source fingerprint, distinct from the raw market-observation tables.
 
 ## Responsibilities
 

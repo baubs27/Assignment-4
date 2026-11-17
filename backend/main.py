@@ -8,22 +8,29 @@ from .store import Store, utc_now, project
 from .candles import build_candles, INTERVALS
 from .demo import seed_demo
 from .feed import YahooFeed, SYMBOLS
+from .indicators import indicator_rows, validate_windows
+from .research import Research
+from .research_api import router as research_router
 
 ROOT = Path(__file__).resolve().parent.parent
 store = Store(os.environ.get('MARKET_DB', ROOT / 'data' / 'market.sqlite3'))
 feed = YahooFeed(store)
+research = Research(store)
 
 
 @asynccontextmanager
 async def lifespan(app):
     seed_demo(store)
+    await research.startup()
     if os.environ.get('MARKET_LIVE', '1') == '1':
         feed.start()
     yield
+    await research.shutdown()
     await feed.stop()
 
 
 app = FastAPI(title='Market Workstation', lifespan=lifespan)
+app.include_router(research_router(research))
 
 
 @app.get('/api/health')
@@ -52,7 +59,7 @@ async def control_feed(action: str):
     return feed.status()
 
 
-def snapshot(rows, symbol, dataset, interval, clock, mode, cursor, total):
+def snapshot(rows, symbol, dataset, interval, clock, mode, cursor, total, fast=5, slow=20):
     effective = project(rows)
     latest = effective[-1] if effective else None
     last_receipt = rows[-1] if rows else None
@@ -66,7 +73,8 @@ def snapshot(rows, symbol, dataset, interval, clock, mode, cursor, total):
         stats=dict(deliveries=len(rows), observations=len({r['id'] for r in rows}),
                    effective=len(effective), duplicates=sum(r['duplicate'] for r in rows)),
         latest=latest, last_receipt_time=last_receipt['receipt_time'] if last_receipt else None,
-        feed=feed.status(), cursor=cursor, total=total)
+        feed=feed.status(), cursor=cursor, total=total,
+        indicators=indicator_rows(candles,fast,slow), sma_windows={'fast':fast,'slow':slow})
 
 
 @app.websocket('/ws/market')
@@ -79,12 +87,14 @@ async def market(ws: WebSocket):
             or mode not in ['live', 'replay'] or (dataset == 'demo' and mode != 'replay')):
         await ws.close(code=1008, reason='Invalid market selection'); return
     try:
+        fast, slow = int(q.get('fast',5)), int(q.get('slow',20))
+        validate_windows(fast,slow)
         start = float(q['start']) if q.get('start') else None
         end = float(q['end']) if q.get('end') else None
         if start is not None and end is not None and start > end:
             raise ValueError()
     except ValueError:
-        await ws.close(code=1008, reason='Invalid receipt range'); return
+        await ws.close(code=1008, reason='Invalid receipt range or SMA windows'); return
     # Freeze selected receipts for deterministic, read-only replay.
     recorded = store.deliveries(dataset, symbol, start, end) if mode == 'replay' else []
     cursor, playing, batch = 0, False, 10
@@ -92,12 +102,19 @@ async def market(ws: WebSocket):
         while True:
             rows = recorded[:cursor] if mode == 'replay' else store.deliveries(dataset, symbol)
             clock = (rows[-1]['receipt_time'] if rows else (recorded[0]['receipt_time'] if recorded else utc_now())) if mode == 'replay' else utc_now()
-            payload = snapshot(rows, symbol, dataset, interval, clock, mode, cursor, len(recorded))
+            payload = snapshot(rows, symbol, dataset, interval, clock, mode, cursor, len(recorded),fast,slow)
             payload['playing'] = playing
             await ws.send_json(payload)
             try:
                 command = await asyncio.wait_for(ws.receive_json(), timeout=.5 if playing else 1)
                 action = command.get('action')
+                if action=='indicators':
+                    try:
+                        a,b = int(command['fast']),int(command['slow'])
+                        validate_windows(a,b)
+                        fast,slow = a,b
+                    except (ValueError,KeyError,TypeError):
+                        await ws.send_json({'type':'error','message':'SMA windows require 1 <= fast < slow <= 500'})
                 if mode == 'replay':
                     if action == 'play': playing = True
                     elif action == 'pause': playing = False

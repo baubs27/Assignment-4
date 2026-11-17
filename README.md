@@ -1,8 +1,8 @@
 # Market Desk - Live Market Workstation
 
-A local IST 402 Part 4.1 application for observing Yahoo Finance prices, inspecting candlesticks and volume, preserving observations in SQLite, and replaying a recording. Built with Vue 3, FastAPI, and TradingView Lightweight Charts 5.3. The frontend includes an observation ledger, source and receipt timestamps, source age, separate upstream/backend status, a candle inspector, and receipt-order replay.
+A local IST 402 Parts 4.1-4.2 application for observing Yahoo Finance prices, inspecting candlesticks and volume, preserving/replaying observations, deriving SMA crossover signals, and measuring simulated account outcomes. Built with Vue 3, FastAPI, SQLite, and TradingView Lightweight Charts 5.3. Market provenance and receipt-order replay remain available alongside the strategy lab, saved backtests, and persistent paper accounts.
 
-This implements the Part 4.1 requirements in the pasted request. SMA strategies, model decisions, paper trading, backtesting, chart-image analysis, and voice belong to later cumulative parts and are not implemented. CSV loading is ungraded practice and is not used as evidence of streaming.
+This implements the supplied Part 4.1 and Part 4.2 requirements. AI model decisions, chart-image interpretation, and voice belong to Part 4.3 and are not implemented. CSV loading is ungraded practice and is not used as evidence of streaming. The existing report.md/video document the submitted Part 4.1 version; the current Part 4.2 behavior and assumptions are documented in [docs/part4-2.md](docs/part4-2.md).
 
 ## Start on this computer
 
@@ -53,6 +53,22 @@ Recorded sessions survive server restarts. Database and runtime files are ignore
 4. Choose **Saved Yahoo** for actual captured observations or **Demo replay** for deterministic teaching data. Set an optional receipt-time range in UTC and click Load range. Play, pause, step, reset, seek, or change receipts per playback tick. A new replay selection starts at receipt zero; switching interval reloads that selection.
 5. Replay freezes the selected receipt list at connection time. Source times determine prices within a candle; receipt order determines when an observation becomes known. A paused replay does not advance historical time. At the end, the last bar may still be forming at the last recorded receipt time. No synthetic closing tick is added.
 
+## Indicators, simulated accounts, and backtesting
+
+In **Market data**, edit Fast SMA and Slow SMA (defaults 5/20). Cyan and gold lines use closing prices; arrows identify upward/downward crossovers. The legend follows the crosshair-selected candle, or the latest candle when the pointer is outside the chart. Unfinished-candle calculations and markers are labeled provisional and never place orders. Editing a chart window preserves the replay cursor.
+
+Open **Strategy & backtests**. Choose a source, symbol, interval, SMA windows, initial cash, fixed buy quantity, fee per fill, and adverse slippage in basis points. Chart settings and experiment settings are independent; every saved run retains its own parameters.
+
+- **Constructed demo recording:** deterministic offline experiment; labeled synthetic. Run backtest evaluates decisions and account outcomes, rather than merely replaying prices.
+- **Saved Yahoo observations:** evaluates the actual receipt stream causally. Optional UTC start/end filter receipt times. Maximum 5,000 receipts per experiment; choose a narrower range for longer captures.
+- **Downloaded Yahoo daily history:** Fetch Yahoo history (for example AAPL / 1y), then select the saved download and Run backtest. It uses completed unadjusted daily bars and excludes today's bar conservatively. Downloads are separate from the required streaming connection and retained as frozen snapshots with a SHA-256 fingerprint. Failures show an error, not synthetic fallback data.
+
+The result shows cash, position/average cost, realized/unrealized P&L, account equity/return, maximum drawdown, order status, fills/fees, and decision-time candles with both SMAs, crossovers, and an equity curve. Saved experiments can be reopened after a browser/server restart. Start live paper account is available for the Yahoo-observation source. It warms up without retrospective orders and processes future observations even when the browser is closed. Pause cancels pending orders; Resume preserves balances while skipping downtime decisions. Server restart automatically pauses active accounts.
+
+The strategy is long only: buy the configured whole-unit quantity when flat on an upward crossover; sell the entire position on a downward crossover. Daily backtests execute at the next bar's open. Recorded/live streams use the next eligible new source price after the decision receipt. No same-candle close fill or future close is used. Fees enter cost basis; slippage worsens both buys and sells. No shorting, borrowing, dividends, interest, or guaranteed liquidity is modeled. Remaining positions are marked, not forcibly liquidated at the sample end. See [full execution/accounting and uncertainty notes](docs/part4-2.md).
+
+SQLite adds history_sets, simulation_runs, simulated_orders, and simulated_fills without deleting market tables. Run results also preserve decision-time candles and equity samples. Historical results and paper balances are separate from the live observation store and from each other.
+
 ## Data limits
 
 Yahoo streaming quotes are sampled observations, not a complete exchange trade tape. Candles summarize captured ticks; missing intervals remain gaps. Values and delays depend on instrument and market hours. The application does not certify exchange-level real-time data, infer market-open status, or invent historical candles before recording began.
@@ -68,6 +84,17 @@ Yahoo has no reliable trade identity/revision number in this stream. Exact norma
 ```
 
 Runs isolated SQLite, aggregation, API/WebSocket, and feed lifecycle tests with the upstream off. It exits nonzero on failure and uses a fresh database directory per run. It does not edit source. For UI changes, also follow [docs/browser-checks.md](docs/browser-checks.md). Observed results and limitations are recorded in [docs/verification.md](docs/verification.md).
+
+Automated browser checks use the real built Vue UI, FastAPI routes/WebSocket, and a new isolated SQLite database, with Yahoo off:
+
+```powershell
+cd frontend
+npm run build
+$env:E2E_BROWSER_CHANNEL = 'chrome'  # Use installed Chrome on this Windows computer.
+npm run test:e2e
+```
+
+For bundled Chromium instead, omit E2E_BROWSER_CHANNEL and install it once with `npx playwright install chromium`. The [GitHub Actions workflow](.github/workflows/checks.yml) runs locked installs, Python tests, the frontend build, and Chromium browser checks on every push and pull request, without provider credentials or network-dependent market tests. Browser failure screenshots/traces are uploaded as artifacts. Real Yahoo/history availability is checked separately and never stubbed as live evidence.
 
 For frontend development, run the backend as above, then in a second PowerShell:
 

@@ -1,16 +1,19 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { createChart, CandlestickSeries, HistogramSeries, ColorType } from 'lightweight-charts'
+import { createChart, CandlestickSeries, HistogramSeries, LineSeries, createSeriesMarkers, ColorType } from 'lightweight-charts'
+import StrategyLab from './StrategyLab.vue'
 
 const symbol = ref('AAPL'), interval = ref('1m'), mode = ref('live'), dataset = ref('live')
 const data = ref(null), connected = ref(false), error = ref(''), sessions = ref([])
 const chartEl = ref(null), hover = ref(null), now = ref(Date.now() / 1000)
 const start = ref(''), end = ref(''), speed = ref(10), busy = ref(false)
-let chart, candles, volume, socket, timer, retry, generation = 0, previous = []
+const view=ref('market'),fast=ref(5),slow=ref(20)
+let chart, candles, volume, fastLine, slowLine, signalMarkers, socket, timer, retry, generation = 0, previous = []
 const names = { AAPL: 'Apple Inc.', MSFT: 'Microsoft Corporation', 'BTC-USD': 'Bitcoin / US Dollar' }
 const bars = computed(() => data.value?.candles || [])
 const last = computed(() => bars.value.at(-1))
 const selected = computed(() => hover.value || last.value)
+const selectedSma=computed(()=>data.value?.indicators?.find(x=>x.timestamp===selected.value?.timestamp))
 const stats = computed(() => data.value?.stats || { deliveries: 0, observations: 0, duplicates: 0, effective: 0 })
 const feed = computed(() => data.value?.feed || { state: 'connecting', detail: 'Connecting to backend…' })
 const latest = computed(() => data.value?.latest)
@@ -44,7 +47,9 @@ function openStream() {
   if (socket) { socket.onclose = null; socket.close() }
   connected.value = false; data.value = null; hover.value = null; previous = []
   if (candles) { candles.setData([]); volume.setData([]) }
+  fastLine?.setData([]);slowLine?.setData([]);signalMarkers?.setMarkers([])
   const query = new URLSearchParams({ symbol: symbol.value, interval: interval.value, mode: mode.value, dataset: dataset.value })
+  if(Number.isInteger(fast.value)&&Number.isInteger(slow.value)&&fast.value>=1&&fast.value<slow.value&&slow.value<=500){query.set('fast',fast.value);query.set('slow',slow.value)}
   if (mode.value === 'replay') {
     if (start.value) query.set('start', new Date(start.value + 'Z').getTime() / 1000)
     if (end.value) query.set('end', new Date(end.value + 'Z').getTime() / 1000)
@@ -54,6 +59,7 @@ function openStream() {
   socket.onmessage = (e) => {
     if (id !== generation) return
     const payload = JSON.parse(e.data)
+    if(payload.type==='error'){error.value=payload.message;return}
     data.value = payload
     draw(payload.candles)
   }
@@ -83,6 +89,12 @@ function draw(rows) {
   }
   if ((wasEmpty || (mode.value === 'replay' && data.value?.playing)) && rows.length) chart.timeScale().fitContent()
   previous = rows.map(r => ({ ...r }))
+  const indicators=data.value?.indicators||[]
+  fastLine.setData(indicators.filter(c=>c.fast!=null).map(c=>({time:c.timestamp,value:c.fast})))
+  slowLine.setData(indicators.filter(c=>c.slow!=null).map(c=>({time:c.timestamp,value:c.slow})))
+  signalMarkers.setMarkers(indicators.filter(c=>c.crossover).map(c=>({time:c.timestamp,position:c.crossover==='buy'?'belowBar':'aboveBar',
+    color:c.confirmed?(c.crossover==='buy'?'#67d2b7':'#ed7181'):'#d9b577',shape:c.crossover==='buy'?'arrowUp':'arrowDown',
+    text:(c.confirmed?'':'Preview ')+c.crossover.toUpperCase()})))
 }
 function setMode(value, source = 'live') {
   mode.value = value; dataset.value = source; start.value = ''; end.value = ''
@@ -100,6 +112,10 @@ async function toggleFeed() {
   finally { busy.value = false }
 }
 watch([symbol, interval, mode, dataset], () => { openStream(); refreshSessions() })
+watch([fast,slow],()=>{
+  if(!Number.isInteger(fast.value)||!Number.isInteger(slow.value)||fast.value<1||fast.value>=slow.value||slow.value>500){error.value='SMA windows require 1 ≤ fast < slow ≤ 500';return}
+  error.value='';command('indicators',{fast:fast.value,slow:slow.value})
+})
 onMounted(async () => {
   await nextTick()
   chart = createChart(chartEl.value, {
@@ -112,6 +128,9 @@ onMounted(async () => {
   })
   candles = chart.addSeries(CandlestickSeries, { upColor: '#3ac5a0', downColor: '#ed7181', borderVisible: false, wickUpColor: '#3ac5a0', wickDownColor: '#ed7181', priceFormat: { type: 'price', precision: 2, minMove: .01 } })
   volume = chart.addSeries(HistogramSeries, { priceFormat: { type: 'volume' }, priceScaleId: '' }, 1)
+  fastLine=chart.addSeries(LineSeries,{color:'#67cfe5',lineWidth:2,priceLineVisible:false,lastValueVisible:false})
+  slowLine=chart.addSeries(LineSeries,{color:'#e7bd72',lineWidth:2,priceLineVisible:false,lastValueVisible:false})
+  signalMarkers=createSeriesMarkers(candles,[])
   chart.panes()[0].setStretchFactor(4)
   chart.panes()[1].setStretchFactor(1)
   chart.subscribeCrosshairMove(p => { hover.value = p.time ? bars.value.find(c => c.timestamp === p.time) || null : null })
@@ -125,7 +144,7 @@ onBeforeUnmount(() => { generation++; clearInterval(timer); clearTimeout(retry);
   <div class="app-shell">
     <header class="topbar">
       <a class="brand" href="/" aria-label="Market Desk home"><span class="brand-icon">▥</span>MARKET<span class="brand-light">DESK</span><span class="local-tag">LOCAL</span></a>
-      <div class="top-links"><span class="top-active">Workstation</span><span class="muted">Part 4.1 · Market data</span></div>
+      <div class="top-links"><span class="top-active">Workstation</span><span class="muted">Part 4.2 · Signals & simulation</span></div>
       <div class="clock"><span class="tiny-dot" :class="{ good: connected }"></span>{{ shortTime(now) }} <span class="muted">UTC</span></div>
     </header>
 
@@ -142,6 +161,8 @@ onBeforeUnmount(() => { generation++; clearInterval(timer); clearTimeout(retry);
 
     <main>
       <div class="page-heading"><div><div class="eyebrow">WORKSPACE <span>/</span> OVERVIEW</div><h1>Market overview<span class="heading-dot">.</span></h1><p class="subtitle">Follow the market. Inspect the evidence.</p></div><div class="status-chip" :class="{ positive: connected && mode === 'live' && age !== null && age < 60 && feed.state === 'connected' }"><span class="tiny-dot"></span>{{ statusLabel }}</div></div>
+      <div class="workspace-tabs"><button :class="{chosen:view==='market'}" @click="view='market'">Market data</button><button :class="{chosen:view==='research'}" @click="view='research'">Strategy & backtests</button></div>
+      <div v-show="view==='market'">
       <div v-if="error" class="error-banner" role="alert">{{ error }}</div>
       <div class="mobile-instrument"><label for="instrument">Instrument</label><select id="instrument" v-model="symbol"><option value="AAPL">AAPL · Apple Inc.</option><option value="MSFT" :disabled="dataset === 'demo'">MSFT · Microsoft</option><option value="BTC-USD" :disabled="dataset === 'demo'">BTC-USD · Bitcoin</option></select></div>
       <div class="mode-bar"><div class="segmented"><button :class="{ chosen: mode === 'live' }" @click="setMode('live')"><span class="tiny-dot"></span>Yahoo live</button><button :class="{ chosen: mode === 'replay' && dataset === 'live' }" @click="setMode('replay')">↶ Saved Yahoo</button><button :class="{ chosen: dataset === 'demo' }" @click="setMode('replay', 'demo')">Demo replay</button></div><span class="mode-note">{{ dataset === 'demo' ? 'CONSTRUCTED TEACHING DATA' : mode === 'replay' ? 'READ-ONLY RECORDING' : 'YAHOO FINANCE · WEBSOCKET' }}</span></div>
@@ -156,6 +177,7 @@ onBeforeUnmount(() => { generation++; clearInterval(timer); clearTimeout(retry);
       <div class="workspace-grid">
         <section class="chart-card">
           <div class="chart-toolbar"><div class="instrument"><span class="ticker-icon">{{ symbol === 'BTC-USD' ? '₿' : symbol[0] }}</span><div><strong>{{ symbol }} <span class="muted">/ USD</span></strong><small>{{ names[symbol] }}</small></div></div><div class="timeframes"><button v-for="i in ['1m','5m','15m','1h','1d']" :key="i" :class="{ chosen: interval === i }" @click="interval = i">{{ i }}</button><button class="fit-button" title="Fit all observed candles" aria-label="Fit chart" @click="chart.timeScale().fitContent()">⛶</button></div></div>
+          <div class="sma-controls"><label class="fast-sma">Fast SMA <input type="number" v-model.number="fast" min="1" max="499" aria-label="Fast SMA window"></label><label class="slow-sma">Slow SMA <input type="number" v-model.number="slow" min="2" max="500" aria-label="Slow SMA window"></label><span data-testid="chart-sma">{{format(selectedSma?.fast,4)}} / {{format(selectedSma?.slow,4)}}</span><span class="sma-state">{{selectedSma?.confirmed?'Completed candle':'Provisional · no trading decision'}}{{selectedSma?.crossover?' · '+selectedSma.crossover.toUpperCase():''}}</span></div>
           <div class="chart-legend"><span class="legend-mode">{{ mode === 'replay' ? 'REPLAY' : 'CANDLES' }}</span><span v-for="[key,label] in [['open','O'],['high','H'],['low','L'],['close','C']]" :key="key">{{ label }} <b :class="selected && selected.close >= selected.open ? 'green' : 'red'">{{ format(selected?.[key]) }}</b></span><span>VOL <b>{{ format(selected?.volume, 0) }}</b></span></div>
           <div class="chart-wrap"><div ref="chartEl" class="chart" aria-label="Candlestick price and volume chart"></div><div v-if="!bars.length" class="empty-chart"><span class="empty-icon">⌁</span><h3>{{ mode === 'replay' && data?.total ? 'Your recording is ready' : mode === 'replay' ? 'No recorded observations' : 'Waiting for market observations' }}</h3><p>{{ mode === 'replay' && data?.total ? 'Press play or step through one receipt at a time.' : mode === 'replay' ? 'Choose another symbol or time range, or try Demo replay.' : 'Yahoo updates will appear here as they arrive.' }}</p><button v-if="mode === 'live'" class="text-button" @click="setMode('replay', 'demo')">Explore demo replay →</button></div></div>
           <div class="chart-footer"><span><span class="tiny-dot" :class="{ good: connected }"></span> {{ connected ? 'Backend WebSocket connected' : 'Backend WebSocket offline' }}</span><span>All chart times UTC · {{ dataset === 'demo' ? 'Synthetic data' : 'Captured ticks only' }}</span></div>
@@ -170,7 +192,9 @@ onBeforeUnmount(() => { generation++; clearInterval(timer); clearTimeout(retry);
 
         <section class="panel audit-panel"><div class="audit-heading"><div class="panel-title">Observation ledger <span class="pill">{{ dataset.toUpperCase() }}</span></div><span class="muted">Latest 12 receipts · immutable source records</span></div><div class="table-wrap"><table><thead><tr><th>RECEIPT / OBS.</th><th>SOURCE TIME · UTC</th><th>RECEIVED · UTC</th><th class="numeric">PRICE</th><th class="numeric">SOURCE VOLUME</th><th>EVENT</th></tr></thead><tbody><tr v-for="r in data?.audit || []" :key="r.receipt_id"><td>#{{ r.receipt_id }} <span class="muted">/ {{ r.id }}</span></td><td>{{ shortTime(r.source_time) }}</td><td>{{ shortTime(r.receipt_time) }}</td><td class="numeric">{{ format(r.price) }}</td><td class="numeric">{{ format(r.cumulative_volume, 0) }}</td><td><span class="event-pill" :class="{ repeat: r.duplicate }">{{ r.duplicate ? 'Exact repeat' : r.revision != null ? 'Revision ' + r.revision : 'Observation' }}</span></td></tr><tr v-if="!data?.audit?.length"><td colspan="6" class="empty-ledger">No receipts in this view. Live observations are saved automatically.</td></tr></tbody></table></div></section>
       </div>
-      <footer class="page-footer"><span>IST 402 · LIVE MARKET WORKSTATION <b>PART 4.1</b></span><span>Educational observation tool · No orders placed · Charts by <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">TradingView Lightweight Charts™</a></span></footer>
+      </div>
+      <StrategyLab v-if="view==='research'" :symbol="symbol" :interval="interval" :fast="fast" :slow="slow" />
+      <footer class="page-footer"><span>IST 402 · LIVE MARKET WORKSTATION <b>PART 4.2</b></span><span>Simulated trades only · No real orders · Charts by <a href="https://www.tradingview.com/" target="_blank" rel="noreferrer">TradingView Lightweight Charts™</a></span></footer>
     </main>
   </div>
 </template>

@@ -1,0 +1,5 @@
+# Part 4.2 implementation request
+
+User requested cumulative Part 4.2: display two different SMAs and their crossover; apply the strategy in a simulated account with orders/fills, cash, positions, realized/unrealized P&L and understandable history; evaluate historical performance causally and explain its limits. Verify SMAs/crossovers against a trusted reference, compare batch/incremental calculations, explain unfinished candles, check accounting against known examples, preserve browser tests, and run automated checks on pushes with GitHub Actions.
+
+Implementation decisions: shared completed-bar crossover strategy and Decimal broker; next-open daily-history fills and next-eligible-price receipt/live fills; separate frozen experiments and persistent paper accounts; explicit costs and no forced final liquidation; additive SQLite schema; pandas and TradingView example reference checks; real Vue/FastAPI Playwright checks with offline fixtures; push/PR CI without provider credentials. Existing submitted Part 4.1 report/video remain versioned artifacts rather than being presented as a new Part 4.2 demonstration.
